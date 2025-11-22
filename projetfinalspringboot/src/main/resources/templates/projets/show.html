@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main}" lang="fr">
+<head>
+    <title th:text="${projet.nom} + ' - RH Élégance'">Projet</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Page Header -->
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #C5A572 0%, #A08555 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-project-diagram" style="font-size: 36px; color: white;"></i>
+            </div>
+            <div style="flex: 1;">
+                <h1 style="margin-bottom: 8px;" th:text="${projet.nom}">Projet IT</h1>
+                <p class="subtitle">
+                    <span th:if="${projet.statut.name() == 'PLANIFIE'}" class="badge-elegant badge-warning">Planifié</span>
+                    <span th:if="${projet.statut.name() == 'EN_COURS'}" class="badge-elegant badge-info">En cours</span>
+                    <span th:if="${projet.statut.name() == 'TERMINE'}" class="badge-elegant badge-success">Terminé</span>
+                    <span th:if="${projet.statut.name() == 'ANNULE'}" class="badge-elegant badge-danger">Annulé</span>
+                </p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a th:href="@{/projets/form/{id}(id=${projet.id})}" 
+                   sec:authorize="hasAnyRole('ADMIN', 'RH', 'CHEF_PROJET')"
+                   class="btn btn-primary">
+                    <i class="fas fa-edit" style="margin-right: 8px;"></i>Modifier
+                </a>
+                <a th:href="@{/projets/list}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>Retour
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 32px;">
+        <div class="stat-card">
+            <i class="fas fa-users"></i>
+            <h4 th:text="${projet.employes != null ? projet.employes.size() : 0}">0</h4>
+            <p>Membres de l'équipe</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-calendar"></i>
+            <h4 th:text="${projet.dateDebut != null ? #temporals.format(projet.dateDebut, 'dd/MM/yyyy') : 'N/A'}">N/A</h4>
+            <p>Date de début</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-flag-checkered"></i>
+            <h4 th:text="${projet.dateFinPrevue != null ? #temporals.format(projet.dateFinPrevue, 'dd/MM/yyyy') : 'N/A'}">N/A</h4>
+            <p>Date de fin prévue</p>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- Description -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle" style="margin-right: 12px;"></i>Description du projet
+            </div>
+            <div style="padding: 32px;">
+                <p style="font-size: 14px; color: #1A1A1A; line-height: 1.8; white-space: pre-line;" 
+                   th:text="${projet.description}">Description du projet</p>
+            </div>
+        </div>
+
+        <!-- Informations -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-clipboard-list" style="margin-right: 12px;"></i>Informations
+            </div>
+            <div style="padding: 32px;">
+                <div style="margin-bottom: 24px;">
+                    <label class="form-label">CHEF DE PROJET</label>
+                    <div th:if="${projet.chefProjet != null}">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+                            <div class="avatar">
+                                <span th:text="${projet.chefProjet.prenom.substring(0,1) + projet.chefProjet.nom.substring(0,1)}">CP</span>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: #1A1A1A;">
+                                    <a th:href="@{/employes/show/{id}(id=${projet.chefProjet.id})}"
+                                       style="color: #C5A572; text-decoration: none;"
+                                       th:text="${projet.chefProjet.prenom + ' ' + projet.chefProjet.nom}">Chef de projet</a>
+                                </div>
+                                <div style="font-size: 12px; color: #666666;" th:text="${projet.chefProjet.poste}">Poste</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p th:unless="${projet.chefProjet != null}" style="color: #999999; margin-top: 8px;">Non assigné</p>
+                </div>
+
+                <div>
+                    <label class="form-label">DÉPARTEMENT</label>
+                    <p style="font-size: 14px; color: #1A1A1A; font-weight: 500; margin-top: 8px;">
+                        <span th:if="${projet.departement != null}" th:text="${projet.departement.nom}">Département</span>
+                        <span th:unless="${projet.departement != null}" style="color: #999999;">Non assigné</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Équipe -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-users" style="margin-right: 12px;"></i>Équipe du projet
+        </div>
+        
+        <div th:if="${projet.employes != null && !projet.employes.isEmpty()}">
+            <table class="table-elegant">
+                <thead>
+                    <tr>
+                        <th>EMPLOYÉ</th>
+                        <th>POSTE</th>
+                        <th>DÉPARTEMENT</th>
+                        <th style="text-align: center;">STATUT</th>
+                        <th style="text-align: center;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="empProjet : ${projet.employes}">
+                        <c:set var="emp" th:value="${empProjet.employe}" scope="request"/>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="avatar">
+                                    <span th:text="${empProjet.employe.prenom.substring(0,1) + empProjet.employe.nom.substring(0,1)}">EM</span>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: #1A1A1A;" 
+                                         th:text="${empProjet.employe.prenom + ' ' + empProjet.employe.nom}">Employé</div>
+                                    <div style="font-size: 12px; color: #666666; font-family: 'Courier New', monospace;" 
+                                         th:text="${empProjet.employe.matricule}">EMP001</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${empProjet.employe.poste}">Poste</td>
+                        <td>
+                            <span th:if="${empProjet.employe.departement != null}" th:text="${empProjet.employe.departement.nom}">Département</span>
+                            <span th:unless="${empProjet.employe.departement != null}" style="color: #999;">Aucun</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <span th:if="${empProjet.employe.statut.name() == 'ACTIF'}" class="badge-elegant badge-success">Actif</span>
+                            <span th:unless="${empProjet.employe.statut.name() == 'ACTIF'}" class="badge-elegant badge-secondary" 
+                                  th:text="${empProjet.employe.statut}">Statut</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <a th:href="@{/employes/show/{id}(id=${empProjet.employe.id})}" 
+                               class="btn btn-outline btn-sm">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div th:unless="${projet.employes != null && !projet.employes.isEmpty()}" 
+             style="padding: 60px 40px; text-align: center;">
+            <i class="fas fa-users" style="font-size: 48px; color: #E0E0E0; margin-bottom: 16px;"></i>
+            <p style="color: #666666;">Aucun membre dans ce projet</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

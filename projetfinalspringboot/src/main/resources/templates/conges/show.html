@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main}" lang="fr">
+<head>
+    <title>Détails Congé - RH Élégance</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #C5A572 0%, #A08555 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="fas fa-calendar-check" style="font-size: 36px; color: white;"></i>
+            </div>
+            <div style="flex: 1;">
+                <h1 style="margin-bottom: 8px;">Demande de Congé</h1>
+                <p class="subtitle">
+                    <span th:text="${conge.typeConge}">Type</span> • 
+                    <span th:text="${conge.nombreJours}">0</span> jours
+                </p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a th:href="@{/conges/form/{id}(id=${conge.id})}" 
+                   th:if="${conge.statut.name() == 'EN_ATTENTE'}"
+                   sec:authorize="hasAnyRole('ADMIN', 'RH', 'MANAGER')"
+                   class="btn btn-primary">
+                    <i class="fas fa-edit" style="margin-right: 8px;"></i>Modifier
+                </a>
+                <a th:href="@{/conges/list}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>Retour
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statut Badge -->
+    <div style="text-align: center; margin-bottom: 32px;">
+        <span th:if="${conge.statut.name() == 'EN_ATTENTE'}" 
+              class="badge-elegant badge-warning" style="font-size: 16px; padding: 12px 24px;">
+            <i class="fas fa-clock"></i> En attente de validation
+        </span>
+        <span th:if="${conge.statut.name() == 'APPROUVE'}" 
+              class="badge-elegant badge-success" style="font-size: 16px; padding: 12px 24px;">
+            <i class="fas fa-check-circle"></i> Approuvée
+        </span>
+        <span th:if="${conge.statut.name() == 'REFUSE'}" 
+              class="badge-elegant badge-danger" style="font-size: 16px; padding: 12px 24px;">
+            <i class="fas fa-times-circle"></i> Refusée
+        </span>
+        <span th:if="${conge.statut.name() == 'ANNULE'}" 
+              class="badge-elegant" style="font-size: 16px; padding: 12px 24px; background: #666;">
+            <i class="fas fa-ban"></i> Annulée
+        </span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+        <!-- Détails de la demande -->
+        <div>
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <i class="fas fa-info-circle" style="margin-right: 12px;"></i>Informations de la demande
+                </div>
+                <div style="padding: 32px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 24px;">
+                        <div>
+                            <label class="form-label">TYPE DE CONGÉ</label>
+                            <p style="font-size: 16px; font-weight: 600; color: #1A1A1A; margin-top: 8px;"
+                               th:text="${conge.typeConge}">Congé annuel</p>
+                        </div>
+                        <div>
+                            <label class="form-label">NOMBRE DE JOURS</label>
+                            <p style="font-size: 28px; font-weight: 700; color: #C5A572; margin-top: 8px;">
+                                <span th:text="${conge.nombreJours}">10</span> jours
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 24px;">
+                        <div>
+                            <label class="form-label">DATE DE DÉBUT</label>
+                            <p style="font-size: 16px; font-weight: 600; color: #1A1A1A; margin-top: 8px;"
+                               th:text="${#temporals.format(conge.dateDebut, 'dd MMMM yyyy', T(java.util.Locale).FRENCH)}">01 janvier 2024</p>
+                        </div>
+                        <div>
+                            <label class="form-label">DATE DE FIN</label>
+                            <p style="font-size: 16px; font-weight: 600; color: #1A1A1A; margin-top: 8px;"
+                               th:text="${#temporals.format(conge.dateFin, 'dd MMMM yyyy', T(java.util.Locale).FRENCH)}">10 janvier 2024</p>
+                        </div>
+                    </div>
+
+                    <div th:if="${conge.motif != null && !conge.motif.isEmpty()}">
+                        <label class="form-label">MOTIF</label>
+                        <p style="font-size: 14px; color: #1A1A1A; line-height: 1.6; margin-top: 8px; white-space: pre-line;"
+                           th:text="${conge.motif}">Motif de la demande</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validation RH -->
+            <div class="card" th:if="${conge.statut.name() != 'EN_ATTENTE'}">
+                <div class="card-header">
+                    <i class="fas fa-user-shield" style="margin-right: 12px;"></i>Validation RH
+                </div>
+                <div style="padding: 32px;">
+                    <div style="margin-bottom: 24px;">
+                        <label class="form-label">VALIDÉ PAR</label>
+                        <div th:if="${conge.approuvePar != null}" style="margin-top: 12px;">
+                            <div style="display: flex; align-items: center; gap: 16px;">
+                                <div class="avatar" style="width: 48px; height: 48px; font-size: 18px;">
+                                    <span th:text="${conge.approuvePar.prenom.substring(0,1) + conge.approuvePar.nom.substring(0,1)}">AB</span>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: #1A1A1A; margin-bottom: 4px;">
+                                        <span th:text="${conge.approuvePar.prenom + ' ' + conge.approuvePar.nom}">Nom Prénom</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: #666666; margin-bottom: 2px;">
+                                        Matricule : <span th:text="${conge.approuvePar.matricule}">MAT001</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: #666666;" th:if="${conge.dateApprobation != null}">
+                                        Date validation : <span th:text="${#temporals.format(conge.dateApprobation, 'dd/MM/yyyy HH:mm')}">01/01/2024</span>
+                                    </div>
+                                    <a th:href="@{/employes/show/{id}(id=${conge.approuvePar.id})}" 
+                                       class="btn btn-outline btn-sm" 
+                                       style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px; border: 1px solid #C5A572; color: #C5A572; background: white;">
+                                        <i class="fas fa-user"></i> Voir profil RH
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <p th:if="${conge.approuvePar == null}" style="color: #999999; margin-top: 8px;">Non renseigné</p>
+                    </div>
+
+                    <div th:if="${conge.commentairesApprobation != null && !conge.commentairesApprobation.isEmpty()}">
+                        <label class="form-label">COMMENTAIRE</label>
+                        <p style="font-size: 14px; color: #1A1A1A; line-height: 1.6; margin-top: 8px; white-space: pre-line;"
+                           th:text="${conge.commentairesApprobation}">Commentaire de validation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations employé -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-user" style="margin-right: 12px;"></i>Employé
+                </div>
+                <div style="padding: 32px; text-align: center;">
+                    <div class="avatar-lg" style="margin: 0 auto 16px;">
+                        <span th:text="${conge.employe.prenom.substring(0,1) + conge.employe.nom.substring(0,1)}">AB</span>
+                    </div>
+                    <div style="font-size: 18px; font-weight: 600; color: #1A1A1A; margin-bottom: 4px;"
+                         th:text="${conge.employe.prenom + ' ' + conge.employe.nom}">Nom Employé</div>
+                    <div style="font-size: 14px; color: #666666; margin-bottom: 8px;"
+                         th:text="${conge.employe.poste}">Poste</div>
+                    <div style="font-size: 12px; color: #999999; font-family: 'Courier New', monospace;"
+                         th:text="${conge.employe.matricule}">MAT001</div>
+                </div>
+            </div>
+
+            <!-- Actions RH -->
+            <div class="card" style="margin-top: 24px;" 
+                 sec:authorize="hasAnyRole('ADMIN', 'RH')"
+                 th:if="${conge.statut.name() == 'EN_ATTENTE'}">
+                <div class="card-header">
+                    <i class="fas fa-tasks" style="margin-right: 12px;"></i>Actions RH
+                </div>
+                <div style="padding: 24px;">
+                    <form th:action="@{/conges/approve/{id}(id=${conge.id})}" method="post" style="margin-bottom: 12px;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <i class="fas fa-check" style="margin-right: 8px;"></i>Approuver
+                        </button>
+                    </form>
+                    <form th:action="@{/conges/reject/{id}(id=${conge.id})}" method="post">
+                        <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                            <i class="fas fa-times" style="margin-right: 8px;"></i>Rejeter
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

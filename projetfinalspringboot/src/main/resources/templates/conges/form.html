@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main}" lang="fr">
+<head>
+    <title th:text="${conge.id != null} ? 'Modifier une demande' : 'Nouvelle demande' + ' - RH Élégance'">Demande de congé</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Header -->
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 th:text="${conge.id != null} ? 'Modifier la demande de congé' : 'Nouvelle demande de congé'">Demande de congé</h1>
+                <p class="subtitle">Remplissez le formulaire ci-dessous</p>
+            </div>
+            <a th:href="@{/conges/list}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    <div th:if="${error}" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
+        <span th:text="${error}"></span>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-calendar-alt" style="margin-right: 12px;"></i>Informations de la demande
+        </div>
+        <form th:action="${conge.id != null} ? @{/conges/update/{id}(id=${conge.id})} : @{/conges/create}" 
+              th:object="${conge}" 
+              method="post"
+              style="padding: 32px;">
+            
+            <!-- Employé -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px;">
+                <!-- Pour ADMIN/RH : Sélection avec recherche -->
+                <div sec:authorize="hasAnyRole('ADMIN', 'RH')" style="position: relative;">
+                    <label class="form-label" for="employe">EMPLOYÉ *</label>
+                    <input type="text" 
+                           id="searchEmploye" 
+                           class="form-control" 
+                           placeholder="🔍 Rechercher par nom ou matricule..."
+                           style="margin-bottom: 8px;"
+                           autocomplete="off"
+                           onkeyup="filterEmployes()"/>
+                    
+                    <select id="employe" 
+                            th:field="*{employe.id}" 
+                            class="form-control" 
+                            required
+                            size="8"
+                            style="min-height: 200px;">
+                        <option value="">-- Sélectionner un employé --</option>
+                        <option th:each="emp : ${employes}" 
+                                th:value="${emp.id}" 
+                                th:text="${emp.prenom + ' ' + emp.nom + ' - ' + emp.matricule}"
+                                th:attr="data-search=${(emp.prenom + ' ' + emp.nom + ' ' + emp.matricule).toLowerCase()}">
+                        </option>
+                    </select>
+                    
+                    <script>
+                        function filterEmployes() {
+                            const input = document.getElementById('searchEmploye');
+                            const select = document.getElementById('employe');
+                            const filter = input.value.toLowerCase();
+                            const options = select.getElementsByTagName('option');
+                            
+                            for (let i = 0; i < options.length; i++) {
+                                const option = options[i];
+                                if (option.value === '') {
+                                    option.style.display = '';
+                                    continue;
+                                }
+                                
+                                const searchData = option.getAttribute('data-search') || '';
+                                if (searchData.indexOf(filter) > -1 || filter === '') {
+                                    option.style.display = '';
+                                } else {
+                                    option.style.display = 'none';
+                                }
+                            }
+                        }
+                    </script>
+                </div>
+                
+                <!-- Pour les autres : Affichage lecture seule -->
+                <div sec:authorize="!hasAnyRole('ADMIN', 'RH')" th:if="${currentEmploye != null}">
+                    <label class="form-label">EMPLOYÉ</label>
+                    <input type="hidden" th:field="*{employe.id}"/>
+                    <div style="display: flex; align-items: center; padding: 12px; background: #F5F5F5; border: 1px solid #E0E0E0; border-radius: 8px;">
+                        <div class="avatar" style="width: 32px; height: 32px; font-size: 12px; margin-right: 12px;">
+                            <span th:text="${currentEmploye.prenom.substring(0,1) + currentEmploye.nom.substring(0,1)}">JP</span>
+                        </div>
+                        <div>
+                            <div style="font-weight: 500; color: #1A1A1A;" th:text="${currentEmploye.prenom + ' ' + currentEmploye.nom}">Jean Dupont</div>
+                            <div style="font-size: 12px; color: #666666;" th:text="${currentEmploye.matricule}">MAT001</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Type de congé -->
+                <div>
+                    <label class="form-label" for="typeConge">TYPE DE CONGÉ *</label>
+                    <select id="typeConge" th:field="*{typeConge}" class="form-control" required>
+                        <option value="">-- Sélectionner un type --</option>
+                        <option value="CONGES_PAYES">Congés payés</option>
+                        <option value="MALADIE">Maladie</option>
+                        <option value="MATERNITE">Maternité</option>
+                        <option value="PATERNITE">Paternité</option>
+                        <option value="FORMATION">Formation</option>
+                        <option value="SANS_SOLDE">Sans solde</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dates -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px;">
+                <div>
+                    <label class="form-label" for="dateDebut">DATE DE DÉBUT *</label>
+                    <input type="date" 
+                           id="dateDebut" 
+                           th:field="*{dateDebut}" 
+                           class="form-control" 
+                           required/>
+                </div>
+
+                <div>
+                    <label class="form-label" for="dateFin">DATE DE FIN *</label>
+                    <input type="date" 
+                           id="dateFin" 
+                           th:field="*{dateFin}" 
+                           class="form-control" 
+                           required/>
+                </div>
+            </div>
+
+            <!-- Nombre de jours (caché, calculé automatiquement) -->
+            <input type="hidden" id="nombreJours" th:field="*{nombreJours}"/>
+
+            <!-- Information nombre de jours calculé -->
+            <div id="joursInfo" 
+                 style="display: none; padding: 16px; background: #E3F2FD; border-left: 4px solid #2196F3; border-radius: 8px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center;">
+                    <i class="fas fa-info-circle" style="margin-right: 12px; color: #1565C0; font-size: 20px;"></i>
+                    <div>
+                        <div style="color: #1565C0; font-weight: 600; font-size: 14px;">Durée calculée</div>
+                        <div style="color: #1976D2; font-size: 16px; font-weight: 500; margin-top: 4px;">
+                            <span id="joursCalcules">0</span> jour(s)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motif -->
+            <div style="margin-bottom: 32px;">
+                <label class="form-label" for="motif">MOTIF</label>
+                <textarea id="motif" 
+                          th:field="*{motif}" 
+                          class="form-control" 
+                          rows="4" 
+                          placeholder="Décrivez brièvement le motif de votre demande..."
+                          style="resize: vertical;"></textarea>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div style="display: flex; gap: 12px; padding-top: 24px; border-top: 1px solid #E0E0E0;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check" style="margin-right: 8px;"></i>
+                    <span th:text="${conge.id != null} ? 'Mettre à jour' : 'Créer la demande'">Enregistrer</span>
+                </button>
+                <a th:href="@{/conges/list}" class="btn btn-secondary">
+                    <i class="fas fa-times" style="margin-right: 8px;"></i>Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script layout:fragment="scripts">
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calcul automatique du nombre de jours
+        function calculerJours() {
+            const dateDebut = document.getElementById('dateDebut').value;
+            const dateFin = document.getElementById('dateFin').value;
+            
+            if (dateDebut && dateFin) {
+                const debut = new Date(dateDebut);
+                const fin = new Date(dateFin);
+                
+                if (fin >= debut) {
+                    const diffTime = Math.abs(fin - debut);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    
+                    document.getElementById('nombreJours').value = diffDays;
+                    document.getElementById('joursCalcules').textContent = diffDays;
+                    document.getElementById('joursInfo').style.display = 'block';
+                } else {
+                    document.getElementById('nombreJours').value = '';
+                    document.getElementById('joursInfo').style.display = 'none';
+                }
+            } else {
+                document.getElementById('nombreJours').value = '';
+                document.getElementById('joursInfo').style.display = 'none';
+            }
+        }
+        
+        // Ajouter les événements de calcul
+        const dateDebutInput = document.getElementById('dateDebut');
+        const dateFinInput = document.getElementById('dateFin');
+        
+        if (dateDebutInput) {
+            dateDebutInput.addEventListener('change', calculerJours);
+        }
+        if (dateFinInput) {
+            dateFinInput.addEventListener('change', calculerJours);
+        }
+        
+        // Calculer au chargement si les dates sont déjà présentes
+        calculerJours();
+        
+        // La recherche d'employé est maintenant gérée par filterEmployes() inline dans le HTML
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/main}" lang="fr">
+<head>
+    <title th:text="${projet.id != null ? 'Modifier' : 'Nouveau'} + ' Projet - RH Élégance'">Projet</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="margin-bottom: 8px;"
+                    th:text="${projet.id != null ? 'Modifier le projet' : 'Nouveau projet'}">
+                    Nouveau projet
+                </h1>
+                <p class="subtitle"
+                   th:text="${projet.id != null ? 'Mettre à jour les informations du projet' : 'Créer un nouveau projet'}">
+                    Créer un nouveau projet
+                </p>
+            </div>
+            <a th:href="@{/projets/list}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>Retour
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
+        <span th:text="${error}"></span>
+    </div>
+
+    <form th:action="@{${projet.id != null ? '/projets/update/' + projet.id : '/projets/create'}}" 
+          method="post" th:object="${projet}">
+        
+        <!-- Informations générales -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <i class="fas fa-info-circle" style="margin-right: 12px;"></i>Informations générales
+            </div>
+            <div style="padding: 32px;">
+                <div style="margin-bottom: 24px;">
+                    <label class="form-label" for="nom">
+                        NOM DU PROJET <span style="color: #C5A572;">*</span>
+                    </label>
+                    <input type="text" id="nom" th:field="*{nom}" class="form-control" required 
+                           placeholder="Ex: Refonte du système RH"/>
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                    <label class="form-label" for="description">
+                        DESCRIPTION <span style="color: #C5A572;">*</span>
+                    </label>
+                    <textarea id="description" th:field="*{description}" class="form-control" rows="4" required
+                              placeholder="Description détaillée du projet et de ses objectifs"></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+                    <div>
+                        <label class="form-label" for="statut">STATUT <span style="color: #C5A572;">*</span></label>
+                        <select id="statut" name="statut" class="form-control" required>
+                            <option value="">-- Sélectionner --</option>
+                            <option value="PLANIFIE" th:selected="${projet.statut != null && projet.statut.name() == 'PLANIFIE'}">Planifié</option>
+                            <option value="EN_COURS" th:selected="${projet.statut != null && projet.statut.name() == 'EN_COURS'}">En cours</option>
+                            <option value="TERMINE" th:selected="${projet.statut != null && projet.statut.name() == 'TERMINE'}">Terminé</option>
+                            <option value="ANNULE" th:selected="${projet.statut != null && projet.statut.name() == 'ANNULE'}">Annulé</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="priorite">PRIORITÉ <span style="color: #C5A572;">*</span></label>
+                        <select id="priorite" name="priorite" class="form-control" required>
+                            <option value="">-- Sélectionner --</option>
+                            <option value="BASSE" th:selected="${projet.priorite != null && projet.priorite.name() == 'BASSE'}">Basse</option>
+                            <option value="NORMALE" th:selected="${projet.priorite != null && projet.priorite.name() == 'NORMALE'}">Normale</option>
+                            <option value="HAUTE" th:selected="${projet.priorite != null && projet.priorite.name() == 'HAUTE'}">Haute</option>
+                            <option value="CRITIQUE" th:selected="${projet.priorite != null && projet.priorite.name() == 'CRITIQUE'}">Critique</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div>
+                        <label class="form-label" for="dateDebut">DATE DE DÉBUT <span style="color: #C5A572;">*</span></label>
+                        <input type="date" id="dateDebut" name="dateDebut" 
+                               th:value="${projet.dateDebut != null ? #temporals.format(projet.dateDebut, 'yyyy-MM-dd') : ''}"
+                               class="form-control" required/>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="dateFinPrevue">DATE DE FIN PRÉVUE <span style="color: #C5A572;">*</span></label>
+                        <input type="date" id="dateFinPrevue" name="dateFinPrevue" 
+                               th:value="${projet.dateFinPrevue != null ? #temporals.format(projet.dateFinPrevue, 'yyyy-MM-dd') : ''}"
+                               class="form-control" required/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Équipe -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <i class="fas fa-users" style="margin-right: 12px;"></i>Équipe du projet
+            </div>
+            <div style="padding: 32px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                    <div>
+                        <label class="form-label" for="chefProjetId">CHEF DE PROJET <span style="color: #C5A572;">*</span></label>
+                        <select id="chefProjetId" name="chefProjetId" class="form-control" required>
+                            <option value="">-- Sélectionner un chef de projet --</option>
+                            <option th:each="employe : ${employes}" 
+                                    th:value="${employe.id}" 
+                                    th:text="${employe.prenom + ' ' + employe.nom + ' - ' + employe.poste}"
+                                    th:selected="${projet.chefProjet != null && projet.chefProjet.id == employe.id}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="departementId">DÉPARTEMENT</label>
+                        <select id="departementId" name="departementId" class="form-control">
+                            <option value="">-- Sélectionner un département --</option>
+                            <option th:each="dept : ${departements}" 
+                                    th:value="${dept.id}" 
+                                    th:text="${dept.nom}"
+                                    th:selected="${projet.departement != null && projet.departement.id == dept.id}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <label class="form-label" for="employeIds">MEMBRES DE L'ÉQUIPE</label>
+                    <select id="employeIds" name="employeIds" class="form-control" multiple size="8">
+                        <option th:each="emp : ${employes}" 
+                                th:value="${emp.id}"
+                                th:text="${emp.prenom + ' ' + emp.nom + ' - ' + emp.poste + (emp.departement != null ? ' (' + emp.departement.nom + ')' : '')}"
+                                th:selected="${projet.employes != null && projet.employes.size() > 0 && #lists.contains(#lists.toList(projet.employes.![employe.id]), emp.id)}">
+                        </option>
+                    </select>
+                    <small style="display: block; margin-top: 8px; color: #666666; font-size: 12px;">
+                        <i class="fas fa-info-circle"></i> Maintenez Ctrl (Windows) ou Cmd (Mac) pour sélectionner plusieurs employés
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save" style="margin-right: 8px;"></i>Enregistrer
+            </button>
+            <a th:href="@{/projets/list}" class="btn btn-secondary">Annuler</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>
