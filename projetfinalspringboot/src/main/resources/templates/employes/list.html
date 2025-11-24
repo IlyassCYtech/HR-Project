@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main}" lang="fr">
+<head>
+    <title>Gestion des Employés - RH Élégance</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="margin-bottom: 8px;">Employés</h1>
+                <p class="subtitle">Liste complète et recherche avancée</p>
+            </div>
+            <div style="display: flex; gap: 12px;" sec:authorize="hasAnyRole('ADMIN', 'RH')">
+                <a th:href="@{/employes/generate-credentials}" class="btn" style="background: #E0E0E0; color: #1A1A1A;">
+                    <i class="fas fa-key" style="margin-right: 8px;"></i>Générer identifiants
+                </a>
+                <a th:href="@{/employes/form}" class="btn btn-primary">
+                    <i class="fas fa-user-plus" style="margin-right: 8px;"></i>Nouvel employé
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
+        <span th:text="${error}"></span>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success" role="alert">
+        <i class="fas fa-check-circle" style="margin-right: 8px;"></i>
+        <span th:text="${success}"></span>
+    </div>
+
+    <!-- Filtres de recherche -->
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+            <i class="fas fa-filter" style="margin-right: 12px;"></i>Filtres de recherche
+        </div>
+        <form method="GET" th:action="@{/employes/list}">
+            <div style="padding: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label" for="search">NOM / PRÉNOM / MATRICULE</label>
+                    <input type="text" id="search" name="search" class="form-control" 
+                           th:value="${param.search}" placeholder="Rechercher par nom, prénom ou matricule...">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="departement">DÉPARTEMENT</label>
+                    <select id="departement" name="departement" class="form-control">
+                        <option value="">Tous les départements</option>
+                        <option th:each="dept : ${departements}" 
+                                th:value="${dept.id}" 
+                                th:text="${dept.nom}"
+                                th:selected="${param.departement != null && param.departement[0] == dept.id.toString()}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="poste">POSTE</label>
+                    <input type="text" id="poste" name="poste" class="form-control" 
+                           th:value="${param.poste}" placeholder="Ex: Développeur">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="statut">STATUT</label>
+                    <select id="statut" name="statut" class="form-control">
+                        <option value="">Tous</option>
+                        <option value="ACTIF" th:selected="${param.statut != null && param.statut[0] == 'ACTIF'}">Actif</option>
+                        <option value="EN_CONGE" th:selected="${param.statut != null && param.statut[0] == 'EN_CONGE'}">En congé</option>
+                        <option value="SUSPENDU" th:selected="${param.statut != null && param.statut[0] == 'SUSPENDU'}">Suspendu</option>
+                        <option value="DEMISSIONNAIRE" th:selected="${param.statut != null && param.statut[0] == 'DEMISSIONNAIRE'}">Démissionnaire</option>
+                        <option value="LICENCIE" th:selected="${param.statut != null && param.statut[0] == 'LICENCIE'}">Licencié</option>
+                        <option value="RETRAITE" th:selected="${param.statut != null && param.statut[0] == 'RETRAITE'}">Retraité</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; align-items: flex-end; gap: 12px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        <i class="fas fa-search" style="margin-right: 8px;"></i>Rechercher
+                    </button>
+                    <a th:href="@{/employes/list}" class="btn" style="background: #E0E0E0; color: #1A1A1A;">
+                        <i class="fas fa-redo" style="margin-right: 8px;"></i>Réinitialiser
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Liste des employés -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-users" style="margin-right: 12px;"></i>
+            <span th:text="'Liste des employés (' + ${employes.size()} + ')'">Liste des employés (0)</span>
+        </div>
+        
+        <div th:if="${employes != null && !employes.empty}">
+            <table class="table-elegant">
+                <thead>
+                    <tr>
+                        <th>MATRICULE</th>
+                        <th>EMPLOYÉ</th>
+                        <th>POSTE</th>
+                        <th>DÉPARTEMENT</th>
+                        <th>EMAIL</th>
+                        <th style="text-align: center;">STATUT</th>
+                        <th style="text-align: center;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="emp : ${employes}">
+                        <td>
+                            <span style="font-family: 'Courier New', monospace; color: #C5A572; font-weight: 600; font-size: 14px;"
+                                  th:text="${emp.matricule}">EMP001</span>
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #C5A572 0%, #A08555 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-user" style="font-size: 18px; color: white;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: #1A1A1A; font-size: 15px;" 
+                                         th:text="${emp.prenom + ' ' + emp.nom}">Nom Prénom</div>
+                                    <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-top: 2px;"
+                                         th:text="${emp.grade != null ? emp.grade.name() : 'N/A'}">GRADE</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span style="color: #666; font-size: 14px;" th:text="${emp.poste}">Poste</span>
+                        </td>
+                        <td>
+                            <span th:if="${emp.departement != null}" 
+                                  th:text="${emp.departement.nom}"
+                                  style="color: #666; font-size: 14px;">Département</span>
+                            <span th:unless="${emp.departement != null}" 
+                                  style="color: #999; font-style: italic; font-size: 13px;">Non assigné</span>
+                        </td>
+                        <td>
+                            <a th:href="'mailto:' + ${emp.email}" 
+                               style="color: #C5A572; text-decoration: none; font-size: 13px;"
+                               th:text="${emp.email}">email@example.com</a>
+                        </td>
+                        <td style="text-align: center;">
+                            <span th:if="${emp.actif}" class="badge-elegant badge-success">
+                                <i class="fas fa-check-circle"></i> Actif
+                            </span>
+                            <span th:unless="${emp.actif}" class="badge-elegant badge-secondary">
+                                <i class="fas fa-times-circle"></i> Inactif
+                            </span>
+                        </td>
+                        <td style="text-align: center;">
+                            <div style="display: flex; gap: 8px; justify-content: center;">
+                                <a th:href="@{/employes/show/{id}(id=${emp.id})}" 
+                                   class="btn-icon" title="Détails">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <!-- Bouton modifier pour ADMIN/RH -->
+                                <a sec:authorize="hasAnyRole('ADMIN','RH')" 
+                                   th:href="@{/employes/form/{id}(id=${emp.id})}" 
+                                   class="btn-icon" 
+                                   title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <!-- Bouton modifier pour l'employé lui-même (si pas ADMIN/RH) -->
+                                <a sec:authorize="!hasAnyRole('ADMIN','RH')" 
+                                   th:if="${emp.id == employeConnecteId}"
+                                   th:href="@{/employes/form/{id}(id=${emp.id})}" 
+                                   class="btn-icon" 
+                                   title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form th:action="@{/employes/delete/{id}(id=${emp.id})}" 
+                                      method="post" 
+                                      style="display: inline;"
+                                      sec:authorize="hasRole('ADMIN')"
+                                      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?');">
+                                    <button type="submit" class="btn-icon btn-danger" title="Supprimer">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div th:if="${employes == null || employes.empty}" 
+             style="padding: 80px 32px; text-align: center;">
+            <i class="fas fa-users" style="font-size: 64px; color: #E0E0E0; margin-bottom: 24px;"></i>
+            <h3 style="color: #666; font-size: 18px; margin-bottom: 8px;">Aucun employé trouvé</h3>
+            <p style="color: #999; font-size: 14px; margin-bottom: 24px;">
+                Commencez par ajouter des employés à votre système
+            </p>
+            <a th:href="@{/employes/form}" 
+               sec:authorize="hasAnyRole('ADMIN', 'RH')"
+               class="btn btn-primary">
+                <i class="fas fa-user-plus" style="margin-right: 8px;"></i>Ajouter un employé
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
