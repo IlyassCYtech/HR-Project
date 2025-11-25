@@ -1,0 +1,224 @@
+<!DOCTYPE html><h1>Détail du congé/absence</h1>
+
+<html xmlns:th="http://www.thymeleaf.org"<ul>
+
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"    <li>ID : <span th:text="${congeAbsence.id}"></span></li>
+
+      lang="fr">    <li>Employé : <span th:text="${congeAbsence.employe?.nom}"></span></li>
+
+<head th:replace="~{fragments/layout :: head('Demande de Congé - Système RH')}"></head>    <li>Type : <span th:text="${congeAbsence.typeConge}"></span></li>
+
+<body>    <li>Date début : <span th:text="${congeAbsence.dateDebut}"></span></li>
+
+<header th:replace="~{fragments/layout :: header}"></header>    <li>Date fin : <span th:text="${congeAbsence.dateFin}"></span></li>
+
+<div th:replace="~{fragments/layout :: navbar('conges')}"></div>    <li>Nombre de jours : <span th:text="${congeAbsence.nombreJours}"></span></li>
+
+    <li>Motif : <span th:text="${congeAbsence.motif}"></span></li>
+
+<div class="content">    <li>Statut : <span th:text="${congeAbsence.statut}"></span></li>
+
+    <div class="header"></ul>
+
+        <div style="display: flex; align-items: center; gap: 24px;"><a th:href="@{'/conges/list'}">Retour à la liste</a>
+
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #C5A572 0%, #A08555 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-calendar-check" style="font-size: 36px; color: white;"></i>
+            </div>
+            <div style="flex: 1;">
+                <h1 style="margin-bottom: 8px;">Demande de Congé</h1>
+                <p class="subtitle"
+                   th:text="${congeAbsence.typeConge + ' • ' + congeAbsence.nombreJours + ' jours'}">
+                    Congés payés • 10 jours
+                </p>
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <a th:href="@{/conges/form/{id}(id=${congeAbsence.id})}" 
+                   th:if="${congeAbsence.statut.name() == 'EN_ATTENTE' && (#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')') || #authentication.principal.employeId == congeAbsence.employe.id)}"
+                   class="btn btn-primary">
+                    <i class="fas fa-edit" style="margin-right: 8px;"></i>Modifier
+                </a>
+                <a th:href="@{/conges/list}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>Retour
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statut -->
+    <div style="text-align: center; margin-bottom: 32px;">
+        <span th:if="${congeAbsence.statut.name() == 'EN_ATTENTE'}" 
+              class="badge-elegant badge-warning" style="font-size: 16px; padding: 12px 24px;">
+            <i class="fas fa-clock"></i> En attente de validation
+        </span>
+        <span th:if="${congeAbsence.statut.name() == 'APPROUVE'}" 
+              class="badge-elegant badge-success" style="font-size: 16px; padding: 12px 24px;">
+            <i class="fas fa-check-circle"></i> Approuvée
+        </span>
+        <span th:if="${congeAbsence.statut.name() == 'REFUSE'}" 
+              class="badge-elegant badge-danger" style="font-size: 16px; padding: 12px 24px;">
+            <i class="fas fa-times-circle"></i> Refusée
+        </span>
+        <span th:if="${congeAbsence.statut.name() == 'ANNULE'}" 
+              class="badge-elegant badge-secondary" style="font-size: 16px; padding: 12px 24px;">
+            <i class="fas fa-ban"></i> Annulée
+        </span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+        <!-- Détails de la demande -->
+        <div>
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-header">
+                    <i class="fas fa-info-circle" style="margin-right: 12px;"></i>Informations de la demande
+                </div>
+                <div style="padding: 32px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 24px;">
+                        <div>
+                            <label class="form-label">TYPE DE CONGÉ</label>
+                            <p style="font-size: 16px; font-weight: 600; color: #1A1A1A; margin-top: 8px;"
+                               th:text="${congeAbsence.typeConge}">
+                                Congés payés
+                            </p>
+                        </div>
+                        <div>
+                            <label class="form-label">NOMBRE DE JOURS</label>
+                            <p style="font-size: 28px; font-weight: 700; color: #C5A572; margin-top: 8px;"
+                               th:text="${congeAbsence.nombreJours + ' jours'}">
+                                10 jours
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 24px;">
+                        <div>
+                            <label class="form-label">DATE DE DÉBUT</label>
+                            <p style="font-size: 16px; font-weight: 600; color: #1A1A1A; margin-top: 8px;"
+                               th:text="${#temporals.format(congeAbsence.dateDebut, 'dd/MM/yyyy')}">
+                                01/01/2024
+                            </p>
+                        </div>
+                        <div>
+                            <label class="form-label">DATE DE FIN</label>
+                            <p style="font-size: 16px; font-weight: 600; color: #1A1A1A; margin-top: 8px;"
+                               th:text="${#temporals.format(congeAbsence.dateFin, 'dd/MM/yyyy')}">
+                                10/01/2024
+                            </p>
+                        </div>
+                    </div>
+
+                    <div th:if="${congeAbsence.motif != null && !congeAbsence.motif.isEmpty()}"
+                         sec:authorize="hasAnyRole('ADMIN', 'RH')">
+                        <label class="form-label">MOTIF</label>
+                        <p style="font-size: 14px; color: #1A1A1A; line-height: 1.6; margin-top: 8px; white-space: pre-line;"
+                           th:text="${congeAbsence.motif}">
+                            Motif de la demande
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validation RH -->
+            <div th:if="${congeAbsence.statut.name() != 'EN_ATTENTE'}" class="card">
+                <div class="card-header">
+                    <i class="fas fa-user-shield" style="margin-right: 12px;"></i>Validation RH
+                </div>
+                <div style="padding: 32px;">
+                    <div style="margin-bottom: 24px;">
+                        <label class="form-label">VALIDÉ PAR</label>
+                        <div th:if="${congeAbsence.approuvePar != null}">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+                                <div class="avatar"
+                                     th:text="${#strings.substring(congeAbsence.approuvePar.prenom, 0, 1) + #strings.substring(congeAbsence.approuvePar.nom, 0, 1)}">
+                                    JD
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: #1A1A1A;"
+                                         th:text="${congeAbsence.approuvePar.prenom + ' ' + congeAbsence.approuvePar.nom}">
+                                        Jean Dupont
+                                    </div>
+                                    <div style="font-size: 12px; color: #666666;"
+                                         th:text="'Matricule : ' + ${congeAbsence.approuvePar.matricule}">
+                                        Matricule : EMP001
+                                    </div>
+                                    <div th:if="${congeAbsence.dateApprobation != null}"
+                                         style="font-size: 12px; color: #666666;"
+                                         th:text="'Date validation : ' + ${#temporals.format(congeAbsence.dateApprobation, 'dd/MM/yyyy HH:mm')}">
+                                        Date validation : 15/01/2024 10:30
+                                    </div>
+                                    <a th:href="@{/employes/show/{id}(id=${congeAbsence.approuvePar.id})}" 
+                                       class="btn btn-outline btn-sm" 
+                                       style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-user"></i> Voir profil RH
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <p th:unless="${congeAbsence.approuvePar != null}" style="color: #999999; margin-top: 8px;">
+                            Non renseigné
+                        </p>
+                    </div>
+
+                    <div th:if="${congeAbsence.commentairesApprobation != null && !congeAbsence.commentairesApprobation.isEmpty()}">
+                        <label class="form-label">COMMENTAIRE</label>
+                        <p style="font-size: 14px; color: #1A1A1A; line-height: 1.6; margin-top: 8px; white-space: pre-line;"
+                           th:text="${congeAbsence.commentairesApprobation}">
+                            Commentaire de validation
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations employé -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-user" style="margin-right: 12px;"></i>Employé
+                </div>
+                <div style="padding: 32px; text-align: center;">
+                    <div class="avatar-lg" style="margin: 0 auto 16px;"
+                         th:text="${#strings.substring(congeAbsence.employe.prenom, 0, 1) + #strings.substring(congeAbsence.employe.nom, 0, 1)}">
+                        JD
+                    </div>
+                    <div style="font-size: 18px; font-weight: 600; color: #1A1A1A; margin-bottom: 4px;"
+                         th:text="${congeAbsence.employe.prenom + ' ' + congeAbsence.employe.nom}">
+                        Jean Dupont
+                    </div>
+                    <div style="font-size: 14px; color: #666666; margin-bottom: 8px;"
+                         th:text="${congeAbsence.employe.poste}">
+                        Développeur
+                    </div>
+                    <div style="font-size: 12px; color: #999999; font-family: 'Courier New', monospace;"
+                         th:text="${congeAbsence.employe.matricule}">
+                        EMP001
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${congeAbsence.statut.name() == 'EN_ATTENTE'}"
+                 sec:authorize="hasAnyRole('ADMIN', 'RH')"
+                 class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <i class="fas fa-tasks" style="margin-right: 12px;"></i>Actions RH
+                </div>
+                <div style="padding: 24px;">
+                    <form th:action="@{/conges/approve/{id}(id=${congeAbsence.id})}" 
+                          method="post" style="margin-bottom: 12px;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <i class="fas fa-check" style="margin-right: 8px;"></i>Approuver
+                        </button>
+                    </form>
+
+                    <form th:action="@{/conges/reject/{id}(id=${congeAbsence.id})}" method="post">
+                        <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                            <i class="fas fa-times" style="margin-right: 8px;"></i>Rejeter
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
