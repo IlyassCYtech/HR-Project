@@ -1,8 +1,0 @@
-Manifest-Version: 1.0
-Built-By: Eclipse Maven Integration
-Build-Jdk: 17
-Created-By: Apache Maven ${maven.version}
-Archiver-Version: Plexus Archiver
-Implementation-Title: Système de Gestion RH
-Implementation-Version: 1.0.0
-Implementation-Vendor: com.gestionrh
