@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - RH Élégance</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style th:inline="css">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: url([[ @{/images/palais-elysee.jpg} ]]) center center/cover no-repeat fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+        }
+        
+        /* Overlay sombre pour améliorer la lisibilité */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 0;
+        }
+
+        .login-container {
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(224, 224, 224, 0.5);
+            padding: 48px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: #C5A572;
+            text-align: center;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 48px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        .alert-elegant {
+            padding: 16px 20px;
+            margin-bottom: 32px;
+            border-left: 3px solid #E53E3E;
+            background: #FFF5F5;
+            color: #742A2A;
+            font-size: 13px;
+        }
+
+        .alert-elegant i {
+            margin-right: 8px;
+            color: #E53E3E;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 14px;
+            border: 1px solid #E0E0E0;
+            background: #FFFFFF;
+            color: #1A1A1A;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #C5A572;
+            box-shadow: 0 0 0 3px rgba(197, 165, 114, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: #C5A572;
+            color: #FFFFFF;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-login:hover {
+            background: #B39563;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(197, 165, 114, 0.3);
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 1px solid #F5F5F5;
+            font-size: 12px;
+            color: #999999;
+        }
+
+        .demo-credentials {
+            background: #FAFAFA;
+            border: 1px solid #E0E0E0;
+            padding: 20px;
+            margin-bottom: 32px;
+            font-size: 13px;
+        }
+
+        .demo-credentials h6 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666666;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .demo-credentials p {
+            margin-bottom: 8px;
+            color: #1A1A1A;
+        }
+
+        .demo-credentials code {
+            background: #FFFFFF;
+            padding: 2px 8px;
+            border: 1px solid #E0E0E0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+    </style>
+</head>
+<body th:style="'background: url(' + @{/images/palais-elysee.jpg} + ') center center/cover no-repeat fixed;'">
+    <div class="login-container">
+        <div class="login-card">
+            <h1 class="logo">RH Élégance</h1>
+            <p class="login-subtitle">Système de Gestion</p>
+
+            <!-- Error Message -->
+            <div class="alert-elegant" th:if="${param.error}">
+                <i class="fas fa-exclamation-circle"></i>
+                Nom d'utilisateur ou mot de passe incorrect
+            </div>
+
+            <!-- Logout Message -->
+            <div class="alert-elegant" th:if="${param.logout}" style="border-left-color: #38A169; background: #F0FFF4; color: #22543D;">
+                <i class="fas fa-check-circle" style="color: #38A169;"></i>
+                Vous avez été déconnecté avec succès
+            </div>
+
+            <!-- Demo Credentials -->
+            <div class="demo-credentials">
+                <h6><i class="fas fa-info-circle"></i> Identifiants de démo</h6>
+                <p><strong>Admin:</strong> <code>admin</code> / <code>admin123</code></p>
+                <p><strong>RH:</strong> <code>rh</code> / <code>rh123</code></p>
+                <p><strong>Manager:</strong> <code>manager</code> / <code>manager123</code></p>
+            </div>
+
+            <!-- Login Form -->
+            <form method="post" th:action="@{/login}">
+                <div class="form-group">
+                    <label class="form-label" for="username">Nom d'utilisateur</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="username" 
+                           name="username" 
+                           placeholder="Entrez votre nom d'utilisateur"
+                           required 
+                           autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Mot de passe</label>
+                    <input type="password" 
+                           class="form-control" 
+                           id="password" 
+                           name="password" 
+                           placeholder="Entrez votre mot de passe"
+                           required>
+                </div>
+
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt" style="margin-right: 10px;"></i>
+                    Se connecter
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <p>&copy; 2025 RH Élégance. Tous droits réservés.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
