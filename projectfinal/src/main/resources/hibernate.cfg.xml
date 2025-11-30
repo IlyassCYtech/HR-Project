@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+    <session-factory>
+        <!-- Configuration de la base de données -->
+        <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/gestion_rh?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=UTC</property>
+        <property name="hibernate.connection.username">root</property>
+        <property name="hibernate.connection.password"></property>
+        
+        <!-- Configuration du pool de connexions -->
+        <property name="hibernate.connection.pool_size">10</property>
+        
+        <!-- Configuration du dialecte MySQL -->
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</property>
+        
+        <!-- Affichage et formatage du SQL -->
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+        <property name="hibernate.use_sql_comments">true</property>
+        
+        <!-- Configuration de la génération du schéma -->
+        <!-- validate: valide le schéma, ne fait aucun changement -->
+        <!-- update: met à jour le schéma -->
+        <!-- create: crée le schéma, détruisant les données précédentes -->
+        <!-- create-drop: crée le schéma au démarrage, le détruit à l'arrêt -->
+        <property name="hibernate.hbm2ddl.auto">update</property>
+        
+        <!-- Configuration de l'encodage -->
+        <property name="hibernate.connection.characterEncoding">utf8</property>
+        <property name="hibernate.connection.useUnicode">true</property>
+        
+        <!-- Configuration du cache de second niveau -->
+        <property name="hibernate.cache.use_second_level_cache">false</property>
+        <property name="hibernate.cache.use_query_cache">false</property>
+        
+        <!-- Configuration des statistiques -->
+        <property name="hibernate.generate_statistics">true</property>
+        
+        <!-- Configuration de la session -->
+        <property name="hibernate.current_session_context_class">thread</property>
+        
+        <!-- Configuration du naming strategy -->
+        <property name="hibernate.physical_naming_strategy">org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl</property>
+        
+        <!-- Mapping des entités -->
+        <mapping class="com.gestionrh.model.Departement"/>
+        <mapping class="com.gestionrh.model.Employe"/>
+        <mapping class="com.gestionrh.model.Projet"/>
+        <mapping class="com.gestionrh.model.EmployeProjet"/>
+        <mapping class="com.gestionrh.model.FichePaie"/>
+        <mapping class="com.gestionrh.model.CongeAbsence"/>
+        <mapping class="com.gestionrh.model.Utilisateur"/>
+    </session-factory>
+</hibernate-configuration>
