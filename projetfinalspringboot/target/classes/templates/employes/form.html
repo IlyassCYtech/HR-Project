@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" layout:decorate="~{layout/main}">
+
+<head>
+    <title th:text="${employe.id != null ? 'Modifier' : 'Ajouter'} + ' un Employé - RH Élégance'">Employé - RH Élégance
+    </title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <!-- Page Header -->
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>
+                        <i th:classappend="${employe.id != null ? 'fa-edit' : 'fa-user-plus'}" class="fas"
+                            style="margin-right: 12px; color: #C5A572;"></i>
+                        <span th:text="${employe.id != null ? 'Modifier' : 'Ajouter'} + ' un employé'">Ajouter un
+                            employé</span>
+                    </h1>
+                    <p class="subtitle"
+                        th:text="${employe.id != null ? 'Modifier les informations de l''employé' : 'Créer un nouveau profil employé'}">
+                        Créer un nouveau profil employé
+                    </p>
+                </div>
+                <a th:href="@{/employes/list}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>Retour à la liste
+                </a>
+            </div>
+        </div>
+
+        <!-- Error Messages -->
+        <div th:if="${error}" class="alert alert-danger">
+            <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Sécurité : accès réservé RH, ADMIN ou l'employé lui-même -->
+        <div th:if="${canViewEmploye}">
+            <!-- Form -->
+            <form id="employeForm"
+                th:action="@{${employe.id != null ? '/employes/update/' + employe.id : '/employes/create'}}"
+                method="post" th:object="${employe}">
+
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                <!-- Informations personnelles -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <i class="fas fa-user" style="margin-right: 12px;"></i>Informations personnelles
+                    </div>
+                    <div style="padding: 32px;">
+                        <div class="grid-3" style="margin-bottom: 24px;">
+                            <div class="form-group">
+                                <label class="form-label">Matricule <span style="color: #C5A572;">*</span></label>
+                                <input th:if="${employe.id == null}" type="text" th:field="*{matricule}"
+                                    class="form-control" placeholder="Ex: EMP001" pattern="[A-Za-z0-9_-]{3,20}"
+                                    title="Le matricule doit contenir entre 3 et 20 caractères alphanumériques"
+                                    required>
+                                <input th:if="${employe.id != null}" type="text" th:field="*{matricule}"
+                                    class="form-control" readonly>
+                                <small th:if="${employe.id == null}" style="color: #666; font-size: 12px;">Le matricule
+                                    doit être unique (3-20 caractères)</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Nom <span style="color: #C5A572;">*</span></label>
+                                <input type="text" id="nom" th:field="*{nom}" th:readonly="${isSelfEdit}"
+                                    class="form-control" placeholder="Nom de famille" minlength="2" maxlength="50"
+                                    required>
+                                <small id="nomError" class="text-danger" style="display:none;">Le nom ne doit contenir
+                                    que des lettres.</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Prénom <span style="color: #C5A572;">*</span></label>
+                                <input type="text" id="prenom" th:field="*{prenom}" th:readonly="${isSelfEdit}"
+                                    class="form-control" placeholder="Prénom" minlength="2" maxlength="50" required>
+                                <small id="prenomError" class="text-danger" style="display:none;">Le prénom ne doit
+                                    contenir que des lettres.</small>
+                            </div>
+                        </div>
+
+                        <div class="grid-2" style="margin-bottom: 24px;">
+                            <div class="form-group">
+                                <label class="form-label">Email <span style="color: #C5A572;">*</span></label>
+                                <input type="email" th:field="*{email}" class="form-control"
+                                    placeholder="prenom.nom@entreprise.com" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Téléphone</label>
+                                <input type="tel" id="telephone" th:field="*{telephone}" class="form-control"
+                                    placeholder="06 12 34 56 78">
+                                <small id="telephoneError" class="text-danger" style="display:none;">Numéro de téléphone
+                                    invalide (10 chiffres minimum).</small>
+                            </div>
+                        </div>
+
+                        <div class="grid-2" style="margin-bottom: 24px;">
+                            <div class="form-group">
+                                <label class="form-label">Date de naissance</label>
+                                <input type="date" id="dateNaissance" th:field="*{dateNaissance}"
+                                    th:readonly="${isSelfEdit}" class="form-control" max="2007-12-31" min="1950-01-01">
+                                <small style="color: #666; font-size: 12px;">L'employé doit avoir au moins 18
+                                    ans</small>
+                                <small id="ageError" class="text-danger" style="display:none;">L'employé doit être
+                                    majeur (18 ans) à la date d'embauche.</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Date d'embauche <span style="color: #C5A572;">*</span></label>
+                                <input type="date" id="dateEmbauche" th:field="*{dateEmbauche}"
+                                    th:readonly="${isSelfEdit}" class="form-control" required>
+                                <small id="hireDateError" class="text-danger" style="display:none;"></small>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 24px;">
+                            <label class="form-label">Date de fin de contrat</label>
+                            <input type="date" id="dateFin" th:field="*{dateFin}" th:readonly="${isSelfEdit}"
+                                th:min="${employe.dateEmbauche}" class="form-control">
+                            <small style="color: #666; font-size: 12px;">Optionnel - Doit être postérieure à la date
+                                d'embauche</small>
+                            <small id="dateError" class="text-danger" style="display:none;">La date de fin doit être
+                                postérieure à la date d'embauche.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Adresse</label>
+                            <textarea th:field="*{adresse}" class="form-control" rows="3" placeholder="Adresse complète"
+                                maxlength="200"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informations professionnelles -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-header">
+                        <i class="fas fa-briefcase" style="margin-right: 12px;"></i>Informations professionnelles
+                    </div>
+                    <div style="padding: 32px;">
+                        <div class="grid-2" style="margin-bottom: 24px;">
+                            <div class="form-group">
+                                <label class="form-label">Poste <span style="color: #C5A572;">*</span></label>
+                                <input type="text" th:field="*{poste}" th:readonly="${isSelfEdit}" class="form-control"
+                                    placeholder="Ex: Développeur, Manager..." minlength="2" maxlength="100" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Grade</label>
+                                <select th:field="*{grade}" class="form-control" th:disabled="${isSelfEdit}">
+                                    <option value="">-- Sélectionner un grade --</option>
+                                    <option
+                                        th:each="gradeOption : ${T(com.gestionrh.projetfinalspringboot.model.enums.Grade).values()}"
+                                        th:value="${gradeOption}" th:text="${gradeOption.libelle}">Grade</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid-3" style="margin-bottom: 24px;">
+                            <div class="form-group">
+                                <label class="form-label">Salaire de base <span style="color: #C5A572;">*</span></label>
+                                <div style="display: flex; align-items: stretch;">
+                                    <input type="number" th:field="*{salaireBase}" th:readonly="${isSelfEdit}"
+                                        class="form-control" step="0.01" min="0.01" max="999999.99" placeholder="0.00"
+                                        required style="border-right: none;">
+                                    <span
+                                        style="border: 1px solid #E0E0E0; padding: 14px 16px; background: #FAFAFA; border-left: none; font-size: 14px; color: #666666;">€</span>
+                                </div>
+                                <small style="color: #666; font-size: 12px;">Le salaire doit être positif</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Département</label>
+                                <select name="departementId" class="form-control" th:disabled="${isSelfEdit}"
+                                    th:value="${employe.departement != null ? employe.departement.id : ''}">
+                                    <option value="">-- Aucun département --</option>
+                                    <option th:each="dept : ${departements}" th:value="${dept.id}" th:text="${dept.nom}"
+                                        th:selected="${employe.departement != null && employe.departement.id == dept.id}">
+                                        Département</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Manager</label>
+                                <select name="managerId" class="form-control" th:disabled="${isSelfEdit}"
+                                    th:value="${employe.manager != null ? employe.manager.id : ''}">
+                                    <option value="">-- Aucun --</option>
+                                    <option th:each="mgr : ${managers}" th:value="${mgr.id}"
+                                        th:text="${mgr.prenom + ' ' + mgr.nom}"
+                                        th:selected="${employe.manager != null && employe.manager.id == mgr.id}">Manager
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Statut <span style="color: #C5A572;">*</span></label>
+                            <select th:field="*{statut}" class="form-control" th:disabled="${isSelfEdit}" required>
+                                <option
+                                    th:each="statutOption : ${T(com.gestionrh.projetfinalspringboot.model.enums.StatutEmploye).values()}"
+                                    th:value="${statutOption}" th:text="${statutOption.libelle}">Statut</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Rôle Utilisateur - Visible uniquement si l'employé a un compte utilisateur ET que l'utilisateur connecté est ADMIN ou RH -->
+                <div class="card" style="margin-bottom: 24px;" th:if="${hasUtilisateur && isAdminOrRH}">
+                    <div class="card-header">
+                        <i class="fas fa-user-shield" style="margin-right: 12px;"></i>Compte Utilisateur
+                    </div>
+                    <div style="padding: 32px;">
+                        <div class="alert alert-info" style="margin-bottom: 20px;">
+                            <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                            Cet employé possède un compte utilisateur. Vous pouvez modifier son rôle ci-dessous.
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Rôle <span style="color: #C5A572;">*</span></label>
+                            <select name="utilisateurRole" class="form-control">
+                                <option th:each="roleOption : ${T(com.gestionrh.projetfinalspringboot.model.enums.Role).values()}"
+                                        th:value="${roleOption.name()}"
+                                        th:text="${roleOption.name()}"
+                                        th:selected="${employeUtilisateur != null and employeUtilisateur.role.name() == roleOption.name()}">
+                                    Rôle
+                                </option>
+                            </select>
+                            <small style="color: #666; font-size: 12px;">
+                                Le rôle détermine les permissions de l'utilisateur dans l'application
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="card">
+                    <div style="padding: 32px; display: flex; justify-content: space-between; gap: 12px;">
+                        <a th:href="@{/employes/list}" class="btn btn-secondary">
+                            <i class="fas fa-times" style="margin-right: 8px;"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save" style="margin-right: 8px;"></i>
+                            <span th:text="${employe.id != null ? 'Modifier' : 'Créer'} + ' l\'employé'">Créer
+                                l'employé</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Message accès refusé -->
+        <div th:if="${!canViewEmploye}" class="alert alert-danger" style="margin-top:40px;">
+            <i class="fas fa-lock" style="margin-right: 8px;"></i>
+            Accès refusé : vous n'avez pas les droits pour modifier ce profil employé.
+        </div>
+    </div>
+
+    <script layout:fragment="scripts">
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('employeForm');
+            if (!form) return;
+
+            const nomInput = document.getElementById('nom');
+            const prenomInput = document.getElementById('prenom');
+            const telephoneInput = document.getElementById('telephone');
+            const dateNaissanceInput = document.getElementById('dateNaissance');
+            const dateEmbaucheInput = document.getElementById('dateEmbauche');
+            const dateFinInput = document.getElementById('dateFin');
+
+            const nomError = document.getElementById('nomError');
+            const prenomError = document.getElementById('prenomError');
+            const telephoneError = document.getElementById('telephoneError');
+            const ageError = document.getElementById('ageError');
+            const hireDateError = document.getElementById('hireDateError');
+            const dateError = document.getElementById('dateError');
+
+            const nameRegex = /^[a-zA-ZÀ-ÿ\s\-]+$/;
+            const phoneCleanRegex = /[^0-9]/g;
+
+            function validateName(input, errorElement, fieldName) {
+                if (!input || !errorElement) return true;
+                if (input.hasAttribute('readonly') || input.disabled) {
+                    errorElement.style.display = 'none';
+                    return true;
+                }
+
+                const value = input.value.trim();
+                if (value === '' && input.hasAttribute('required')) {
+                    errorElement.style.display = 'block';
+                    errorElement.textContent = `Le ${fieldName} est obligatoire.`;
+                    return false;
+                }
+                if (value === '') {
+                    errorElement.style.display = 'none';
+                    return true;
+                }
+                if (!nameRegex.test(value)) {
+                    errorElement.style.display = 'block';
+                    errorElement.textContent = `Le ${fieldName} ne doit contenir que des lettres.`;
+                    return false;
+                }
+                if (value.length < 2 || value.length > 50) {
+                    errorElement.style.display = 'block';
+                    errorElement.textContent = `Le ${fieldName} doit contenir entre 2 et 50 caractères.`;
+                    return false;
+                }
+                errorElement.style.display = 'none';
+                return true;
+            }
+
+            function validatePhone() {
+                if (!telephoneInput || !telephoneError) return true;
+                const value = telephoneInput.value.trim();
+                if (value === '') {
+                    telephoneError.style.display = 'none';
+                    return true;
+                }
+                const cleanPhone = value.replace(phoneCleanRegex, '');
+                if (!/^\d+$/.test(cleanPhone)) {
+                    telephoneError.style.display = 'block';
+                    telephoneError.textContent = 'Le téléphone ne doit contenir que des chiffres.';
+                    return false;
+                }
+                if (cleanPhone.length !== 10) {
+                    telephoneError.style.display = 'block';
+                    telephoneError.textContent = 'Le numéro de téléphone doit contenir exactement 10 chiffres.';
+                    return false;
+                }
+                if (!cleanPhone.startsWith('0')) {
+                    telephoneError.style.display = 'block';
+                    telephoneError.textContent = 'Le numéro de téléphone doit commencer par 0.';
+                    return false;
+                }
+                telephoneError.style.display = 'none';
+                return true;
+            }
+
+            function validateAge() {
+                if (!dateNaissanceInput || !dateEmbaucheInput || !ageError) return true;
+                if (dateNaissanceInput.hasAttribute('readonly') || dateEmbaucheInput.hasAttribute('readonly')) {
+                    ageError.style.display = 'none';
+                    return true;
+                }
+                // IMPORTANT: Ne valider l'âge QUE si les DEUX dates sont remplies
+                if (!dateNaissanceInput.value || !dateEmbaucheInput.value) {
+                    ageError.style.display = 'none';
+                    return true;
+                }
+
+                const birthDate = new Date(dateNaissanceInput.value);
+                const hireDate = new Date(dateEmbaucheInput.value);
+                let age = hireDate.getFullYear() - birthDate.getFullYear();
+                const monthDiff = hireDate.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && hireDate.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                if (age < 18) {
+                    ageError.style.display = 'block';
+                    ageError.textContent = "L'employé doit avoir au moins 18 ans à la date d'embauche.";
+                    return false;
+                }
+                ageError.style.display = 'none';
+                return true;
+            }
+
+            function validateHireDate() {
+                if (!dateEmbaucheInput || !hireDateError) return true;
+                if (dateEmbaucheInput.hasAttribute('readonly')) {
+                    hireDateError.style.display = 'none';
+                    return true;
+                }
+                if (!dateEmbaucheInput.value) return true;
+
+                const hireDate = new Date(dateEmbaucheInput.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (hireDate > today) {
+                    hireDateError.style.display = 'block';
+                    hireDateError.textContent = "La date d'embauche ne peut pas être dans le futur.";
+                    return false;
+                }
+                hireDateError.style.display = 'none';
+                return true;
+            }
+
+            function validateDates() {
+                if (!dateFinInput || !dateEmbaucheInput || !dateError) return true;
+                if (dateFinInput.hasAttribute('readonly') || dateEmbaucheInput.hasAttribute('readonly')) {
+                    dateError.style.display = 'none';
+                    return true;
+                }
+                if (!dateFinInput.value || !dateEmbaucheInput.value) {
+                    dateError.style.display = 'none';
+                    return true;
+                }
+
+                const startDate = new Date(dateEmbaucheInput.value);
+                const endDate = new Date(dateFinInput.value);
+                if (endDate <= startDate) {
+                    dateError.style.display = 'block';
+                    dateError.textContent = 'La date de fin de contrat doit être postérieure à la date d\'embauche.';
+                    return false;
+                }
+                dateError.style.display = 'none';
+                return true;
+            }
+
+            // Validation en temps réel
+            if (nomInput && !nomInput.hasAttribute('readonly') && !nomInput.disabled) {
+                nomInput.addEventListener('input', () => validateName(nomInput, nomError, 'nom'));
+            }
+            if (prenomInput && !prenomInput.hasAttribute('readonly') && !prenomInput.disabled) {
+                prenomInput.addEventListener('input', () => validateName(prenomInput, prenomError, 'prénom'));
+            }
+            if (telephoneInput) {
+                telephoneInput.addEventListener('input', validatePhone);
+            }
+            if (dateNaissanceInput && !dateNaissanceInput.hasAttribute('readonly')) {
+                dateNaissanceInput.addEventListener('change', validateAge);
+            }
+            if (dateEmbaucheInput && !dateEmbaucheInput.hasAttribute('readonly')) {
+                dateEmbaucheInput.addEventListener('change', function () {
+                    validateAge();
+                    validateDates();
+                    validateHireDate();
+                });
+            }
+            if (dateFinInput && !dateFinInput.hasAttribute('readonly')) {
+                dateFinInput.addEventListener('change', validateDates);
+            }
+
+            // Validation lors de la soumission
+            form.addEventListener('submit', function (event) {
+                let isValid = true;
+
+                if (nomInput && !nomInput.hasAttribute('readonly') && !nomInput.disabled) {
+                    if (!validateName(nomInput, nomError, 'nom')) isValid = false;
+                }
+                if (prenomInput && !prenomInput.hasAttribute('readonly') && !prenomInput.disabled) {
+                    if (!validateName(prenomInput, prenomError, 'prénom')) isValid = false;
+                }
+                if (telephoneInput && telephoneInput.value.trim() !== '') {
+                    if (!validatePhone()) isValid = false;
+                }
+                if (!validateAge()) isValid = false;
+                if (!validateHireDate()) isValid = false;
+                if (!validateDates()) isValid = false;
+
+                if (!isValid) {
+                    event.preventDefault();
+                    const firstError = document.querySelector('.text-danger[style*="display: block"]');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    alert('Le formulaire contient des erreurs. Veuillez les corriger avant de continuer.');
+                }
+            });
+
+            // Bloquer caractères interdits
+            if (nomInput && !nomInput.hasAttribute('readonly') && !nomInput.disabled) {
+                nomInput.addEventListener('keypress', function (e) {
+                    const char = String.fromCharCode(e.which);
+                    if (!/[a-zA-ZÀ-ÿ\s\-]/.test(char)) e.preventDefault();
+                });
+            }
+            if (prenomInput && !prenomInput.hasAttribute('readonly') && !prenomInput.disabled) {
+                prenomInput.addEventListener('keypress', function (e) {
+                    const char = String.fromCharCode(e.which);
+                    if (!/[a-zA-ZÀ-ÿ\s\-]/.test(char)) e.preventDefault();
+                });
+            }
+            if (telephoneInput) {
+                telephoneInput.addEventListener('keypress', function (e) {
+                    const char = String.fromCharCode(e.which);
+                    if (!/[0-9\s.\-+]/.test(char)) e.preventDefault();
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

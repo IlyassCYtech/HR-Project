@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" layout:decorate="~{layout/main}" lang="fr">
+
+<head>
+    <title>Fiches de Paie - RH Élégance</title>
+</head>
+
+<body>
+    <div layout:fragment="content">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 style="margin-bottom: 8px;">Fiches de Paie</h1>
+                    <p class="subtitle">Gestion et génération des bulletins de salaire</p>
+                </div>
+                <div th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}"
+                    style="display: flex; gap: 12px;">
+                    <a th:href="@{/fiches-paie/generate}" class="btn btn-primary">
+                        <i class="fas fa-file-invoice-dollar" style="margin-right: 8px;"></i>Générer des fiches
+                    </a>
+                    <button type="button" class="btn btn-secondary" onclick="downloadAllZip()">
+                        <i class="fas fa-file-archive" style="margin-right: 8px;"></i>Télécharger tout (ZIP)
+                    </button>
+                </div>
+                <div th:unless="${#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}"
+                    style="display: flex; gap: 12px;">
+                    <button type="button" class="btn btn-primary" onclick="downloadMyFichesZip()">
+                        <i class="fas fa-file-archive" style="margin-right: 8px;"></i>Télécharger toutes mes fiches
+                        (ZIP)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${error}" class="alert alert-danger" role="alert" style="margin-bottom: 24px;">
+            <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
+            <strong th:text="${error}"></strong>
+        </div>
+
+        <!-- Masse salariale (visible uniquement pour RH et Admin) -->
+        <div th:if="${masseSalariale != null && #authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}"
+            class="card"
+            style="background: linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%); color: white; margin-bottom: 24px;">
+            <div style="padding: 32px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <label
+                            style="font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #C5A572; margin-bottom: 8px; display: block;">
+                            Masse salariale totale
+                        </label>
+                        <h2 style="font-family: 'Playfair Display', serif; font-size: 42px; font-weight: 700; margin: 0; color: white;"
+                            th:text="${#numbers.formatDecimal(masseSalariale, 0, 'COMMA', 0, 'POINT')}">
+                            100,000
+                        </h2>
+                    </div>
+                    <div
+                        style="width: 80px; height: 80px; background: rgba(197, 165, 114, 0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-euro-sign" style="font-size: 36px; color: #C5A572;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <i class="fas fa-filter" style="margin-right: 12px;"></i>Filtres
+            </div>
+            <form method="GET" th:action="@{/fiches-paie/list}">
+                <!-- Filtres de recherche rapide (UNIQUEMENT pour RH/Admin) -->
+                <div th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}"
+                    style="padding: 16px 24px; background: #F5F5F5; border-bottom: 1px solid #E5E5E5;">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                        <div>
+                            <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">
+                                RECHERCHER PAR NOM
+                            </label>
+                            <input type="text" id="search" name="search" class="form-control"
+                                placeholder="Nom ou prénom de l'employé..." style="padding: 8px 12px; font-size: 13px;"
+                                th:value="${param.search}">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="padding: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                    <!-- Sélection employé (UNIQUEMENT pour RH/Admin) -->
+                    <div th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}">
+                        <label class="form-label" for="employeId"
+                            style="font-size: 12px; margin-bottom: 4px;">EMPLOYÉ</label>
+                        <select id="employeId" name="employeId" class="form-control"
+                            style="padding: 8px 12px; font-size: 13px;">
+                            <option value="">Tous les employés</option>
+                            <option th:each="emp : ${employes}" th:value="${emp.id}"
+                                th:text="${emp.prenom + ' ' + emp.nom}"
+                                th:selected="${param.employeId != null && param.employeId[0] == emp.id.toString()}"
+                                th:attr="data-nom=${emp.prenom + ' ' + emp.nom}, data-dept=${emp.departement != null ? emp.departement.id : ''}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Message informatif pour les employés réguliers -->
+                    <div th:unless="${#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}"
+                        style="display: flex; align-items: center; background: #F0F9FF; padding: 12px; border-radius: 8px; border-left: 3px solid #3B82F6;">
+                        <i class="fas fa-info-circle" style="color: #3B82F6; margin-right: 8px;"></i>
+                        <span style="font-size: 13px; color: #1E40AF;">Affichage de vos fiches uniquement</span>
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="mois" style="font-size: 12px; margin-bottom: 4px;">MOIS</label>
+                        <input type="month" id="mois" name="mois" class="form-control"
+                            style="padding: 8px 12px; font-size: 13px;" th:value="${param.mois}">
+                    </div>
+
+                    <div style="display: flex; align-items: flex-end;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1; margin-right: 8px;">
+                            <i class="fas fa-search" style="margin-right: 8px;"></i>Filtrer
+                        </button>
+                        <a th:href="@{/fiches-paie/list}" class="btn btn-secondary">
+                            Réinitialiser
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Liste des fiches -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-file-invoice" style="margin-right: 12px;"></i>Liste des fiches de paie
+            </div>
+
+            <div th:if="${fichesPaie != null && !fichesPaie.isEmpty()}">
+                <table class="table-elegant">
+                    <thead>
+                        <tr>
+                            <th>PÉRIODE</th>
+                            <th>EMPLOYÉ</th>
+                            <th>SALAIRE BASE</th>
+                            <th>PRIMES</th>
+                            <th>DÉDUCTIONS</th>
+                            <th>NET À PAYER</th>
+                            <th style="text-align: center;">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="fiche : ${fichesPaie}">
+                            <td>
+                                <div style="font-family: 'Courier New', monospace; font-weight: 600; color: #C5A572;"
+                                    th:text="${fiche.mois + '/' + fiche.annee}">
+                                    01/2024
+                                </div>
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="avatar">
+                                        <span
+                                            th:text="${fiche.employe.prenom.substring(0,1) + fiche.employe.nom.substring(0,1)}">JD</span>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600; color: #1A1A1A;"
+                                            th:text="${fiche.employe.prenom + ' ' + fiche.employe.nom}">
+                                            Jean Dupont
+                                        </div>
+                                        <div style="font-size: 12px; color: #666666;" th:text="${fiche.employe.poste}">
+                                            Développeur
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="font-weight: 600;"
+                                th:text="${#numbers.formatDecimal(fiche.salaireBase, 0, 'COMMA', 0, 'POINT') + ' €'}">
+                                3,000 €
+                            </td>
+                            <td style="color: #22C55E; font-weight: 600;"
+                                th:text="'+ ' + ${#numbers.formatDecimal(fiche.primes, 0, 'COMMA', 0, 'POINT') + ' €'}">
+                                + 200 €
+                            </td>
+                            <td style="color: #EF4444; font-weight: 600;"
+                                th:text="'- ' + ${#numbers.formatDecimal(fiche.deductions, 0, 'COMMA', 0, 'POINT') + ' €'}">
+                                - 800 €
+                            </td>
+                            <td>
+                                <div style="font-size: 16px; font-weight: 700; color: #1A1A1A;"
+                                    th:text="${#numbers.formatDecimal(fiche.netAPayer, 0, 'COMMA', 0, 'POINT') + ' €'}">
+                                    2,400 €
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <div style="display: inline-flex; gap: 8px;">
+                                    <a th:href="@{/fiches-paie/show/{id}(id=${fiche.id})}"
+                                        class="btn btn-outline btn-sm" title="Voir le bulletin">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a th:href="@{/fiches-paie/pdf/{id}(id=${fiche.id})}"
+                                        class="btn btn-secondary btn-sm" title="Télécharger PDF" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:unless="${fichesPaie != null && !fichesPaie.isEmpty()}"
+                style="padding: 80px 40px; text-align: center;">
+                <i class="fas fa-file-invoice-dollar" style="font-size: 64px; color: #E0E0E0; margin-bottom: 24px;"></i>
+                <h3
+                    style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 600; color: #1A1A1A; margin-bottom: 12px;">
+                    Aucune fiche de paie
+                </h3>
+                <p style="color: #666666; margin-bottom: 24px;">
+                    <span th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}">
+                        Générez des fiches de paie pour vos employés
+                    </span>
+                    <span th:unless="${#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}">
+                        Aucune fiche de paie disponible pour le moment
+                    </span>
+                </p>
+                <a th:if="${#authorization.expression('hasAnyRole(''ADMIN'', ''RH'')')}"
+                    th:href="@{/fiches-paie/generate}" class="btn btn-primary">
+                    <i class="fas fa-plus" style="margin-right: 8px;"></i>Générer des fiches
+                </a>
+            </div>
+        </div>
+
+        <script>
+            // Filtrage dynamique de la liste des employés (UNIQUEMENT pour RH/Admin)
+            document.addEventListener('DOMContentLoaded', function () {
+                const searchInput = document.getElementById('search');
+                const employeSelect = document.getElementById('employeId');
+
+                // Vérifier que les éléments existent (seulement pour RH/Admin)
+                if (searchInput && employeSelect) {
+                    const allOptions = Array.from(employeSelect.options).slice(1); // Exclure "Tous les employés"
+
+                    function filterEmployes() {
+                        const searchTerm = searchInput.value.toLowerCase().trim();
+
+                        // Réinitialiser le select (garder l'option "Tous")
+                        employeSelect.innerHTML = '<option value="">Tous les employés</option>';
+
+                        allOptions.forEach(option => {
+                            const nom = option.getAttribute('data-nom').toLowerCase();
+                            const matchesSearch = !searchTerm || nom.includes(searchTerm);
+
+                            if (matchesSearch) {
+                                employeSelect.appendChild(option.cloneNode(true));
+                            }
+                        });
+                    }
+
+                    searchInput.addEventListener('input', filterEmployes);
+                }
+            });
+
+            // Fonction pour télécharger toutes les fiches de l'employé connecté en ZIP
+            // Fonction pour télécharger toutes les fiches de l'employé connecté en ZIP
+            function downloadMyFichesZip() {
+                // Récupérer le username de l'utilisateur connecté depuis Thymeleaf
+                const username = '[[${#authentication.principal.username}]]';
+
+                // Utiliser la route existante avec le username comme identifiant
+                window.location.href = '/gestion-rh/fiches-paie/download-employee-zip/' + encodeURIComponent(username);
+            }
+
+            // Fonction pour télécharger toutes les fiches en ZIP (RH/Admin uniquement)
+            function downloadAllZip() {
+                if (confirm('Voulez-vous télécharger les fiches de paie affichées en ZIP ?')) {
+                    // Construire l'URL avec les paramètres de filtre en GET
+                    let url = '/gestion-rh/fiches-paie/download-all-zip?';
+                    const params = [];
+
+                    // Récupérer tous les filtres actifs
+                    const moisInput = document.getElementById('mois');
+                    const moisValue = moisInput ? moisInput.value : '';
+                    if (moisValue) {
+                        params.push('mois=' + encodeURIComponent(moisValue));
+                    }
+
+                    const employeSelect = document.getElementById('employeId');
+                    const employeId = employeSelect ? employeSelect.value : '';
+                    if (employeId) {
+                        params.push('employeId=' + encodeURIComponent(employeId));
+                    }
+
+                    const searchInput = document.getElementById('search');
+                    const searchValue = searchInput ? searchInput.value.trim() : '';
+                    if (searchValue) {
+                        params.push('search=' + encodeURIComponent(searchValue));
+                    }
+
+                    // Rediriger vers l'URL avec les paramètres en GET
+                    window.location.href = url + params.join('&');
+                }
+            }
+        </script>
+    </div>
+</body>
+
+</html>

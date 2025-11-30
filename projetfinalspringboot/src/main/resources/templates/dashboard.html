@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - Système de Gestion RH</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <th:block th:insert="~{fragments/common :: common-styles}"></th:block>
+    
+    <style>
+        /* Dashboard specific styles - only overrides */
+        .header {
+            margin-bottom: 48px;
+            border-bottom: 1px solid #E0E0E0;
+            padding-bottom: 24px;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-weight: 700;
+            color: #1A1A1A;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .header .subtitle {
+            font-size: 16px;
+            color: #666666;
+            font-weight: 300;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            padding: 32px 24px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #C5A572;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            transform: translateY(-4px);
+        }
+
+        .stat-card i {
+            font-size: 24px;
+            color: #C5A572;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .stat-card h4 {
+            font-size: 36px;
+            font-weight: 300;
+            color: #1A1A1A;
+            margin-bottom: 8px;
+        }
+
+        .stat-card p {
+            font-size: 11px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <th:block th:insert="~{fragments/common :: sidebar}"></th:block>
+    
+    <div class="main-content">
+        <th:block th:insert="~{fragments/common :: topbar}"></th:block>
+        
+        <div class="content">
+            <th:block th:insert="~{fragments/common :: messages}"></th:block>
+            
+            <div class="header">
+                <h1>Tableau de bord</h1>
+                <p class="subtitle">Vue d'ensemble de votre système de gestion des ressources humaines</p>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <h4 th:text="${stats != null and stats.totalEmployes != null ? stats.totalEmployes : '0'}">0</h4>
+                    <p>Employés</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-building"></i>
+                    <h4 th:text="${stats != null and stats.totalDepartements != null ? stats.totalDepartements : '0'}">0</h4>
+                    <p>Départements</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-project-diagram"></i>
+                    <h4 th:text="${stats != null and stats.projetsActifs != null ? stats.projetsActifs : '0'}">0</h4>
+                    <p>Projets actifs</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <h4 th:text="${stats != null and stats.congesEnAttente != null ? stats.congesEnAttente : '0'}">0</h4>
+                    <p>Congés en attente</p>
+                </div>
+            </div>
+
+            <!-- Contenu principal -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px;">
+                <!-- Notifications -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-bell" style="margin-right: 12px;"></i>Notifications récentes
+                    </div>
+                    
+                    <div th:if="${notifications != null and !notifications.empty}">
+                        <div th:each="notif, iterStat : ${notifications}" 
+                             th:style="${iterStat.last ? 'padding: 20px 0;' : 'padding: 20px 0; border-bottom: 1px solid #F5F5F5;'}">
+                            <h6 style="font-size: 15px; font-weight: 600; color: #1A1A1A; margin-bottom: 6px;" 
+                                th:text="${notif.titre}">Titre</h6>
+                            <p style="font-size: 14px; color: #666666; margin-bottom: 6px; font-weight: 300;" 
+                               th:text="${notif.message}">Message</p>
+                            <small style="font-size: 12px; color: #999999; text-transform: uppercase; letter-spacing: 0.5px;" 
+                                   th:text="${notif.dateRelative}">Date</small>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${notifications == null or notifications.empty}">
+                        <div style="padding: 20px 0; border-bottom: 1px solid #F5F5F5;">
+                            <h6 style="font-size: 15px; font-weight: 600; color: #1A1A1A; margin-bottom: 6px;">
+                                Nouvelle demande de congé
+                            </h6>
+                            <p style="font-size: 14px; color: #666666; margin-bottom: 6px; font-weight: 300;">
+                                Une demande de congé est en attente d'approbation
+                            </p>
+                            <small style="font-size: 12px; color: #999999; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Il y a 2h
+                            </small>
+                        </div>
+                        
+                        <div style="padding: 20px 0; border-bottom: 1px solid #F5F5F5;">
+                            <h6 style="font-size: 15px; font-weight: 600; color: #1A1A1A; margin-bottom: 6px;">
+                                Projet terminé
+                            </h6>
+                            <p style="font-size: 14px; color: #666666; margin-bottom: 6px; font-weight: 300;">
+                                Un projet a été marqué comme terminé
+                            </p>
+                            <small style="font-size: 12px; color: #999999; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Hier
+                            </small>
+                        </div>
+                        
+                        <div style="padding: 20px 0;">
+                            <h6 style="font-size: 15px; font-weight: 600; color: #1A1A1A; margin-bottom: 6px;">
+                                Nouvel employé
+                            </h6>
+                            <p style="font-size: 14px; color: #666666; margin-bottom: 6px; font-weight: 300;">
+                                Un nouvel employé a rejoint l'équipe
+                            </p>
+                            <small style="font-size: 12px; color: #999999; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Il y a 3 jours
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sidebar Actions -->
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-lightning-bolt" style="margin-right: 12px;"></i>Actions rapides
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <a sec:authorize="hasAnyRole('ADMIN', 'RH')" 
+                               th:href="@{/employes/form}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-user-plus" style="margin-right: 8px;"></i>Ajouter un employé
+                            </a>
+                            
+                            <a sec:authorize="hasAnyRole('ADMIN', 'RH', 'MANAGER')" 
+                               th:href="@{/projets/form}" 
+                               class="btn btn-secondary">
+                                <i class="fas fa-plus" style="margin-right: 8px;"></i>Créer un projet
+                            </a>
+                            
+                            <a th:href="@{/conges/form}" class="btn btn-secondary">
+                                <i class="fas fa-calendar-plus" style="margin-right: 8px;"></i>Demander des congés
+                            </a>
+                            
+                            <a sec:authorize="hasAnyRole('ADMIN', 'RH')" 
+                               th:href="@{/statistiques}" 
+                               class="btn btn-outline">
+                                <i class="fas fa-chart-line" style="margin-right: 8px;"></i>Voir les statistiques
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Informations -->
+                    <div class="card" style="margin-top: 24px;">
+                        <div class="card-header">
+                            <i class="fas fa-info-circle" style="margin-right: 12px;"></i>Informations système
+                        </div>
+                        
+                        <div style="font-size: 13px; line-height: 2;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F5F5F5;">
+                                <span style="color: #666666;">Version</span>
+                                <span style="font-weight: 600;">1.0.0</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F5F5F5;">
+                                <span style="color: #666666;">Framework</span>
+                                <span style="font-weight: 600;">Spring Boot 3.4</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F5F5F5;">
+                                <span style="color: #666666;">Mise à jour</span>
+                                <span style="font-weight: 600;">07/11/2025</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                                <span style="color: #666666;">Serveur</span>
+                                <span style="font-weight: 600;">Tomcat 10.1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:insert="~{fragments/common :: scripts}"></th:block>
+</body>
+</html>

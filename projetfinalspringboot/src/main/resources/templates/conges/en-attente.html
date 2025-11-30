@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/main}" lang="fr">
+<head>
+    <title>Demandes en Attente - RH Élégance</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="header">
+        <div>
+            <h1 style="margin-bottom: 8px;">Demandes de Congés en Attente</h1>
+            <p class="subtitle">Validation RH des demandes de congés et absences</p>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 32px;">
+        <div class="stat-card">
+            <i class="fas fa-clock"></i>
+            <h4 th:text="${stats != null ? stats['enAttente'] : 0}">0</h4>
+            <p>En attente</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-check-circle"></i>
+            <h4 th:text="${stats != null ? stats['approuves'] : 0}">0</h4>
+            <p>Approuvées</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-times-circle"></i>
+            <h4 th:text="${stats != null ? stats['refuses'] : 0}">0</h4>
+            <p>Refusées</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-list"></i>
+            <h4 th:text="${stats != null ? stats['total'] : 0}">0</h4>
+            <p>Total</p>
+        </div>
+    </div>
+
+    <!-- Liste des demandes -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-tasks" style="margin-right: 12px;"></i>Demandes en attente de validation
+        </div>
+        
+        <div th:if="${congesEnAttente != null && !congesEnAttente.isEmpty()}">
+            <table class="table-elegant">
+                <thead>
+                    <tr>
+                        <th>EMPLOYÉ</th>
+                        <th>TYPE</th>
+                        <th>PÉRIODE</th>
+                        <th style="text-align: center;">JOURS</th>
+                        <th>MOTIF</th>
+                        <th style="text-align: center;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="conge : ${congesEnAttente}">
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="avatar">
+                                    <span th:text="${conge.employe.prenom.substring(0,1) + conge.employe.nom.substring(0,1)}">EM</span>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: #1A1A1A;"
+                                         th:text="${conge.employe.prenom + ' ' + conge.employe.nom}">
+                                        Jean Dupont
+                                    </div>
+                                    <div style="font-size: 12px; color: #666666;">
+                                        <span th:text="${conge.employe.poste}">Poste</span>
+                                        <span th:if="${conge.employe.departement != null}" 
+                                              th:text="' • ' + ${conge.employe.departement.nom}"> • Département</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-weight: 600; color: #1A1A1A;" th:text="${conge.typeConge}">CONGES_PAYES</td>
+                        <td>
+                            <div style="font-size: 13px; color: #1A1A1A;">
+                                <div style="margin-bottom: 4px;">
+                                    <i class="fas fa-play-circle" style="color: #C5A572; margin-right: 6px; font-size: 11px;"></i>
+                                    <span th:text="${#temporals.format(conge.dateDebut, 'dd/MM/yyyy')}">01/01/2024</span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-flag-checkered" style="color: #C5A572; margin-right: 6px; font-size: 11px;"></i>
+                                    <span th:text="${#temporals.format(conge.dateFin, 'dd/MM/yyyy')}">15/01/2024</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; background: #F5F5F5; border-radius: 8px; font-weight: 600; color: #1A1A1A;"
+                                  th:text="${conge.nombreJours}">
+                                5
+                            </span>
+                        </td>
+                        <td>
+                            <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #666666;">
+                                <span th:if="${conge.motif != null && !#strings.isEmpty(conge.motif)}" th:text="${conge.motif}">Motif</span>
+                                <span th:unless="${conge.motif != null && !#strings.isEmpty(conge.motif)}" style="color: #999999;">-</span>
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <div style="display: inline-flex; gap: 8px;">
+                                <a th:href="@{/conges/show/{id}(id=${conge.id})}" 
+                                   class="btn btn-outline btn-sm" title="Voir">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <form th:action="@{/conges/approve/{id}(id=${conge.id})}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-primary btn-sm" title="Approuver">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/conges/reject/{id}(id=${conge.id})}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-secondary btn-sm" title="Rejeter">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div th:unless="${congesEnAttente != null && !congesEnAttente.isEmpty()}" 
+             style="padding: 60px 40px; text-align: center;">
+            <i class="fas fa-check-circle" style="font-size: 48px; color: #E0E0E0; margin-bottom: 16px;"></i>
+            <p style="color: #666666;">Aucune demande en attente de validation</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>
