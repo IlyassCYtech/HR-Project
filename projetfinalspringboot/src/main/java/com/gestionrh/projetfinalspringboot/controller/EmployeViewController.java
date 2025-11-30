@@ -11,6 +11,7 @@ import com.gestionrh.projetfinalspringboot.service.UtilisateurService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -896,8 +897,21 @@ public class EmployeViewController {
      * Supprimer un employé
      */
     @PostMapping("/delete/{id}")
-    public String deleteEmploye(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteEmploye(@PathVariable Long id, Authentication authentication, RedirectAttributes redirectAttributes) {
         try {
+            // *** SÉCURITÉ : Empêcher l'auto-suppression (même pour ADMIN/RH) ***
+            String username = authentication.getName();
+            Optional<Utilisateur> utilisateurOpt = utilisateurService.findByUsername(username);
+            
+            if (utilisateurOpt.isPresent()) {
+                Utilisateur utilisateur = utilisateurOpt.get();
+                if (utilisateur.getEmploye() != null && utilisateur.getEmploye().getId().equals(id)) {
+                    redirectAttributes.addFlashAttribute("error", 
+                        "Vous ne pouvez pas supprimer votre propre compte employé !");
+                    return "redirect:/employes/list";
+                }
+            }
+            
             Optional<Employe> employe = employeService.findById(id);
             if (employe.isPresent()) {
                 employeService.deleteById(id);

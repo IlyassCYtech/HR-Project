@@ -96,6 +96,12 @@ END$$
 
 DELIMITER ;
 
+-- ============================================================================
+-- NOTE: Pas besoin de trigger pour supprimer l'utilisateur lié
+-- La contrainte FOREIGN KEY (employe_id) REFERENCES employes(id) ON DELETE CASCADE
+-- dans la table 'utilisateurs' s'en charge automatiquement.
+-- ============================================================================
+
 -- Table de liaison employés-projets (relation many-to-many)
 CREATE TABLE employe_projets (
     id INT AUTO_INCREMENT PRIMARY KEY,
